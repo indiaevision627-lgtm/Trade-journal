@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trade Journal</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#eef1f5;--card:#fff;--tx:#14202e;--mut:#5f6c7b;--bd:#d6dce4;--g:#0b7a4b;--r:#c62f2f;--ac:#1f4fa8;--gs:#e1f3ea;--rs:#fbe6e4;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e141b;--card:#17202b;--tx:#e8edf3;--mut:#93a1b2;--bd:#2a3644;--g:#35d08a;--r:#ff7a70;--ac:#82a8ff;--gs:#12332a;--rs:#3a1e1d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e141b;--card:#17202b;--tx:#e8edf3;--mut:#93a1b2;--bd:#2a3644;--g:#35d08a;--r:#ff7a70;--ac:#82a8ff;--gs:#12332a;--rs:#3a1e1d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 -apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px 14px 60px}
+h1{font-size:22px;margin:4px 0 14px;letter-spacing:-.01em}
+h2{font-size:16px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.sum div{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
+.sum small{color:var(--mut);display:block}
+.sum b{font-size:19px}
+.big b{font-size:26px}
+.pos{color:var(--g)}.neg{color:var(--r)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+label{display:block;font-size:13px;color:var(--mut)}
+input,select,textarea{width:100%;margin-top:3px;padding:8px;border:1px solid var(--bd);border-radius:7px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:60px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+button{padding:8px 14px;border:1px solid var(--bd);border-radius:7px;background:var(--card);color:var(--tx);font:inherit;cursor:pointer}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+:root[data-theme="dark"] button.p{color:#0e141b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button.p{color:#0e141b}}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.sp{flex:1}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{color:var(--mut);font-weight:600;font-size:13px}
+td.n,th.n{text-align:right}
+td.nt{white-space:normal;min-width:120px;color:var(--mut)}
+.tag{padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.tag.w{background:var(--gs);color:var(--g)}.tag.l{background:var(--rs);color:var(--r)}
+.msg{color:var(--r);min-height:18px;font-size:13px}
+.mut{color:var(--mut);font-size:13px}
+svg{width:100%;height:120px;display:block}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:3px 6px 3px 10px;border:1px solid var(--bd);border-radius:99px;margin:0 6px 6px 0;font-size:13px}
+.chip button{padding:0 7px;border-radius:99px}
+.login{max-width:340px;margin:12vh auto;padding:0 14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="login" id="lg"><div class="card"><h1>Trade Journal</h1>
+<label>ID<input id="lid" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+<label style="margin-top:10px">Password<input id="lpw" type="password" autocomplete="current-password"></label>
+<div class="row"><button class="p" id="lbtn">Login</button><span class="msg" id="lmsg"></span></div></div></div>
+<main id="app" hidden>
+<div class="row" style="margin:0 0 6px"><h1 style="margin:0">Trade Journal</h1><span class="sp"></span><span class="mut" id="who"></span><button id="pwb">Password badlo</button><button id="lo">Logout</button></div>
+<div class="mut" id="st" style="margin:0 0 12px"></div>
+<div class="card" id="pwc" hidden><h2>Password badlo</h2><label>Naya password (kam se kam 6 akshar)<input id="npw" type="password" autocomplete="new-password"></label><div class="row"><button class="p" id="pws">Password save karo</button><button id="pwx">Band karo</button><span class="msg" id="pwm"></span></div></div>
+
+<div class="row" style="margin:0 0 12px"><label style="min-width:170px">Mahina<select id="mo"></select></label></div>
+<div class="sum" id="sum"></div>
+<div class="card"><h2>Profit / loss ka graph</h2><div id="eq"></div></div>
+
+<div class="card">
+<h2 id="ft">Naya trade jodo</h2>
+<div class="grid">
+<label>Tareekh<input type="date" id="d"></label>
+<label>Instrument<input id="ins" value="NIFTY"></label>
+<label>Type<select id="ty"><option>CALL</option><option>PUT</option><option>FUTURE</option><option>STOCK</option><option>Other</option></select></label>
+<label>Strike / detail<input id="det" placeholder="jaise 23500 CE"></label>
+<label>Qty<input type="number" id="q" inputmode="decimal" placeholder="65"></label>
+<label>Entry price<input type="number" id="en" inputmode="decimal"></label>
+<label>Exit price<input type="number" id="ex" inputmode="decimal"></label>
+<label>Profit / Loss (₹)<input type="number" id="pnl" inputmode="decimal" placeholder="loss ke liye minus"></label>
+</div>
+<div class="grid" id="cf" style="margin-top:10px"></div>
+<label style="margin-top:10px">Notes<textarea id="nt" placeholder="Kyun liya, kya seekha"></textarea></label>
+<div class="row"><button class="p" id="save">Trade save karo</button><button id="cancel" hidden>Edit cancel</button><span class="msg" id="msg"></span></div>
+<div class="mut">Entry, exit aur qty bharoge to P/L apne aap nikal jayega. Aap chaho to P/L khud bhi likh sakte ho.</div>
+</div>
+
+<div class="card">
+<h2>Trade calculator</h2>
+<div class="grid">
+<label>Lots<input type="number" id="cl" inputmode="decimal" value="1"></label>
+<label>Lot size<input type="number" id="cls" inputmode="decimal" value="65"></label>
+<label>Entry price<input type="number" id="ce" inputmode="decimal"></label>
+<label>Exit price<input type="number" id="cx" inputmode="decimal"></label>
+<label>Stop-loss price<input type="number" id="cs" inputmode="decimal"></label>
+<label>Target price<input type="number" id="ct" inputmode="decimal"></label>
+<label>Max risk (₹)<input type="number" id="cr" inputmode="decimal" placeholder="jaise 2000"></label>
+</div>
+<div class="sum" id="co" style="margin:12px 0 0"></div>
+<div class="row"><button id="cj">Journal form mein bharo</button></div>
+<div class="mut" style="margin-top:8px">Ye option kharidne (buy) ke hisaab se hai. Lot size abhi 65 hai, badle to yahan khud badal lena.</div>
+</div>
+
+<div class="card"><h2>Trades</h2><div class="tw"><table id="tb"></table></div></div>
+
+<div class="card">
+<h2>Apni khud ki fields jodo</h2>
+<div class="mut" style="margin-bottom:8px">Jaise Stop-loss, Strategy, Emotion, Broker. Jodte hi form aur table mein aa jayegi.</div>
+<div id="fl"></div>
+<div class="row"><input id="fn" placeholder="Field ka naam" style="max-width:220px;margin:0"><select id="fty" style="max-width:120px;margin:0"><option value="text">Text</option><option value="number">Number</option></select><button id="fa">Field jodo</button></div>
+</div>
+
+<div class="card">
+<h2>Backup</h2>
+<div class="mut" style="margin-bottom:8px">Aapka data aapke account mein online save hota hai, kisi aur ko nahi dikhta. Ye backup extra suraksha ke liye hai.</div>
+<textarea id="bk" placeholder="Restore karne ke liye backup yahan paste karo"></textarea>
+<div class="row"><button id="bc">Backup copy karo</button><button id="br">Restore karo</button><span class="mut" id="bm"></span></div>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let S={trades:[],fields:[]},editId=null,month='all';
+const SBURL='https://stlxibqpvozsfezcnypz.supabase.co',SBKEY='sb_publishable_2sJA9AwwV_hxCZrHfTvEfQ_xDkc08Vm',EM='@tradejournal.app';
+let sb=null,uid=null;
+const setSt=m=>{$('st').textContent=m};
+const wr=async f=>{try{const r=await f();if(r&&r.error)throw r.error;setSt('')}catch(e){setSt('Save nahi hua: '+((e&&e.message)||'error')+'. Internet check karke dobara try karo.')}};
+const toRow=t=>({id:t.id,user_id:uid,trade_date:t.date,ins:t.ins,type:t.type,det:t.det,qty:t.qty,en:t.en,ex:t.ex,pnl:t.pnl,note:t.note,cf:t.cf||{}});
+const persistTrade=t=>wr(()=>sb.from('journal_trades').upsert(toRow(t),{onConflict:'user_id,id'}));
+const deleteTrade=id=>wr(()=>sb.from('journal_trades').delete().eq('id',id));
+const persistFields=()=>wr(()=>sb.from('journal_fields').upsert({user_id:uid,fields:S.fields},{onConflict:'user_id'}));
+const persistAll=old=>wr(async()=>{
+  const ids=new Set(S.trades.map(t=>t.id)),gone=old.filter(id=>!ids.has(id));
+  if(gone.length){const r=await sb.from('journal_trades').delete().in('id',gone);if(r.error)return r}
+  if(S.trades.length){const r=await sb.from('journal_trades').upsert(S.trades.map(toRow),{onConflict:'user_id,id'});if(r.error)return r}
+  return sb.from('journal_fields').upsert({user_id:uid,fields:S.fields},{onConflict:'user_id'});
+});
+async function load(){
+  const a=await sb.from('journal_trades').select('*').order('trade_date'),b=await sb.from('journal_fields').select('fields').maybeSingle();
+  if(a.error||b.error){setSt('Data load nahi hua. Internet check karo.');return}
+  S.trades=a.data.map(r=>({id:r.id,date:r.trade_date,ins:r.ins||'',type:r.type||'',det:r.det||'',qty:Number(r.qty)||0,en:r.en||'',ex:r.ex||'',pnl:Number(r.pnl),note:r.note||'',cf:r.cf||{}}));
+  S.fields=(b.data&&b.data.fields)||[];
+  const vals={};document.querySelectorAll('#cf [data-f]').forEach(i=>vals[i.dataset.f]=i.value);
+  renderCF(vals);renderAll();
+}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const inr=n=>'₹'+Math.abs(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+const sg=n=>(n<0?'−':n>0?'+':'')+inr(n);
+const cl=n=>n>0?'pos':n<0?'neg':'';
+const today=()=>{const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
+let manual=false;
+
+function months(){return [...new Set(S.trades.map(t=>t.date.slice(0,7)))].sort().reverse()}
+function renderMonths(){
+  const m=months();if(month!=='all'&&!m.includes(month))month='all';
+  $('mo').innerHTML='<option value="all">Sab mahine</option>'+m.map(x=>'<option value="'+x+'"'+(x===month?' selected':'')+'>'+x+'</option>').join('');
+}
+function list(){return S.trades.filter(t=>month==='all'||t.date.startsWith(month)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id<b.id?-1:1)}
+
+function renderSum(){
+  const L=list(),n=L.length,tot=L.reduce((a,t)=>a+t.pnl,0);
+  const W=L.filter(t=>t.pnl>0),Ls=L.filter(t=>t.pnl<0);
+  const avg=a=>a.length?a.reduce((x,t)=>x+t.pnl,0)/a.length:0;
+  const best=n?Math.max(...L.map(t=>t.pnl)):0,worst=n?Math.min(...L.map(t=>t.pnl)):0;
+  $('sum').innerHTML=
+   '<div class="big"><small>Total P/L</small><b class="'+cl(tot)+'">'+sg(tot)+'</b></div>'+
+   '<div><small>Trades</small><b>'+n+'</b></div>'+
+   '<div><small>Win rate</small><b>'+(n?Math.round(W.length/n*100):0)+'%</b></div>'+
+   '<div><small>Avg profit</small><b class="pos">'+(W.length?sg(avg(W)):'—')+'</b></div>'+
+   '<div><small>Avg loss</small><b class="neg">'+(Ls.length?sg(avg(Ls)):'—')+'</b></div>'+
+   '<div><small>Sabse bada profit</small><b class="'+cl(best)+'">'+(n?sg(best):'—')+'</b></div>'+
+   '<div><small>Sabse bada loss</small><b class="'+cl(worst)+'">'+(n?sg(worst):'—')+'</b></div>';
+  // curve
+  const el=$('eq');
+  if(n<2){el.innerHTML='<div class="mut">Graph ke liye kam se kam 2 trades chahiye.</div>';return}
+  let c=0;const pts=L.map(t=>c+=t.pnl);const all=[0,...pts];
+  const mn=Math.min(...all),mx=Math.max(...all),rg=(mx-mn)||1,W2=600,H=120,p=8;
+  const X=i=>p+i*(W2-2*p)/(pts.length-1),Y=v=>H-p-(v-mn)/rg*(H-2*p);
+  el.innerHTML='<svg viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Cumulative profit loss"><line x1="0" x2="600" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="var(--bd)" stroke-dasharray="4 4"/><polyline fill="none" stroke="var(--ac)" stroke-width="2.5" vector-effect="non-scaling-stroke" points="'+pts.map((v,i)=>X(i)+','+Y(v)).join(' ')+'"/></svg>';
+}
+
+function renderTable(){
+  const L=list().slice().reverse();
+  const cf=S.fields;
+  let h='<tr><th>Tareekh</th><th>Instrument</th><th>Type</th><th class="n">Qty</th><th class="n">Entry</th><th class="n">Exit</th><th class="n">P/L</th>'+cf.map(f=>'<th>'+esc(f.name)+'</th>').join('')+'<th>Notes</th><th></th></tr>';
+  if(!L.length)h+='<tr><td colspan="'+(9+cf.length)+'" class="mut">Abhi koi trade nahi hai. Upar se pehla trade jodo.</td></tr>';
+  L.forEach(t=>{
+    h+='<tr><td>'+esc(t.date)+'</td><td>'+esc(t.ins)+(t.det?' <span class="mut">'+esc(t.det)+'</span>':'')+'</td><td>'+esc(t.type)+'</td>'+
+    '<td class="n">'+esc(t.qty||'')+'</td><td class="n">'+esc(t.en)+'</td><td class="n">'+esc(t.ex)+'</td>'+
+    '<td class="n"><span class="tag '+(t.pnl>=0?'w':'l')+'">'+sg(t.pnl)+'</span></td>'+
+    cf.map(f=>'<td>'+esc((t.cf||{})[f.id])+'</td>').join('')+
+    '<td class="nt">'+esc(t.note)+'</td><td><button data-e="'+t.id+'">Edit</button> <button data-d="'+t.id+'">Delete</button></td></tr>';
+  });
+  $('tb').innerHTML=h;
+}
+
+function renderCF(vals){
+  vals=vals||{};
+  $('cf').innerHTML=S.fields.map(f=>'<label>'+esc(f.name)+'<input data-f="'+f.id+'" type="'+f.type+'" value="'+esc(vals[f.id])+'"></label>').join('');
+  $('fl').innerHTML=S.fields.length?S.fields.map(f=>'<span class="chip">'+esc(f.name)+' <span class="mut">('+f.type+')</span><button data-r="'+f.id+'" aria-label="Hatao">×</button></span>').join(''):'<div class="mut">Abhi koi extra field nahi hai.</div>';
+}
+function renderAll(){renderMonths();renderSum();renderTable()}
+
+function autoPnl(){
+  if(manual)return;
+  const q=parseFloat($('q').value),en=parseFloat($('en').value),ex=parseFloat($('ex').value);
+  if(q&&!isNaN(en)&&!isNaN(ex))$('pnl').value=Math.round((ex-en)*q*100)/100;
+}
+['q','en','ex'].forEach(i=>$(i).addEventListener('input',autoPnl));
+$('pnl').addEventListener('input',()=>{manual=$('pnl').value!==''});
+
+function resetForm(){
+  editId=null;manual=false;
+  ['det','q','en','ex','pnl','nt'].forEach(i=>$(i).value='');
+  $('d').value=today();$('ft').textContent='Naya trade jodo';$('save').textContent='Trade save karo';$('cancel').hidden=true;$('msg').textContent='';
+  renderCF();
+}
+$('save').onclick=()=>{
+  const pnl=parseFloat($('pnl').value);
+  if(!$('d').value){$('msg').textContent='Tareekh chuno.';return}
+  if(isNaN(pnl)){$('msg').textContent='P/L bharo, ya entry, exit aur qty bharo.';return}
+  const cf={};document.querySelectorAll('#cf [data-f]').forEach(i=>cf[i.dataset.f]=i.value);
+  const t={id:editId||Date.now().toString(36),date:$('d').value,ins:$('ins').value.trim()||'NIFTY',type:$('ty').value,det:$('det').value.trim(),qty:parseFloat($('q').value)||0,en:$('en').value,ex:$('ex').value,pnl:pnl,note:$('nt').value.trim(),cf:cf};
+  const i=S.trades.findIndex(x=>x.id===t.id);
+  if(i>=0)S.trades[i]=t;else S.trades.push(t);
+  persistTrade(t);resetForm();renderAll();
+};
+$('cancel').onclick=resetForm;
+$('mo').onchange=e=>{month=e.target.value;renderSum();renderTable()};
+
+let pend=null;
+$('tb').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.e){
+    const t=S.trades.find(x=>x.id===b.dataset.e);if(!t)return;
+    editId=t.id;manual=true;
+    $('d').value=t.date;$('ins').value=t.ins;$('ty').value=t.type;$('det').value=t.det;$('q').value=t.qty||'';$('en').value=t.en;$('ex').value=t.ex;$('pnl').value=t.pnl;$('nt').value=t.note;
+    renderCF(t.cf);$('ft').textContent='Trade edit karo';$('save').textContent='Badlav save karo';$('cancel').hidden=false;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  if(b.dataset.d){
+    if(pend!==b.dataset.d){pend=b.dataset.d;b.textContent='Pakka?';return}
+    const did=pend;S.trades=S.trades.filter(x=>x.id!==did);pend=null;deleteTrade(did);renderAll();
+  }
+};
+$('fa').onclick=()=>{
+  const n=$('fn').value.trim();if(!n)return;
+  S.fields.push({id:'f'+Date.now().toString(36),name:n,type:$('fty').value});
+  $('fn').value='';persistFields();renderCF();renderTable();
+};
+$('fl').onclick=e=>{
+  const b=e.target.closest('button[data-r]');if(!b)return;
+  S.fields=S.fields.filter(f=>f.id!==b.dataset.r);persistFields();renderCF();renderTable();
+};
+$('bc').onclick=async()=>{
+  const s=JSON.stringify(S);$('bk').value=s;
+  try{await navigator.clipboard.writeText(s);$('bm').textContent='Copy ho gaya.'}catch(e){$('bk').select();$('bm').textContent='Upar ka text khud copy kar lo.'}
+};
+$('br').onclick=()=>{
+  try{const o=JSON.parse($('bk').value);if(!Array.isArray(o.trades))throw 0;const old=S.trades.map(x=>x.id);S={trades:o.trades,fields:o.fields||[]};persistAll(old);resetForm();renderAll();$('bm').textContent='Restore ho gaya.'}
+  catch(e){$('bm').textContent='Backup sahi nahi hai.'}
+};
+function calc(){
+  const g=i=>parseFloat($(i).value);
+  const lots=g('cl')||0,ls=g('cls')||0,en=g('ce'),ex=g('cx'),sl=g('cs'),tg=g('ct'),rk=g('cr');
+  const q=lots*ls,o=[];
+  const row=(k,v,c)=>'<div><small>'+k+'</small><b class="'+(c||'')+'">'+v+'</b></div>';
+  o.push(row('Total qty',q||'—'));
+  if(q&&!isNaN(en)){
+    if(!isNaN(ex))o.push(row('Exit par P/L',sg((ex-en)*q),cl((ex-en)*q)));
+    if(!isNaN(sl))o.push(row('Stop-loss par',sg((sl-en)*q),cl((sl-en)*q)));
+    if(!isNaN(tg))o.push(row('Target par',sg((tg-en)*q),cl((tg-en)*q)));
+    o.push(row('Lagne wala paisa',inr(en*q)));
+  }
+  if(!isNaN(en)&&!isNaN(sl)&&!isNaN(tg)&&en>sl)o.push(row('Risk : Reward','1 : '+((tg-en)/(en-sl)).toFixed(2)));
+  if(!isNaN(en)&&!isNaN(sl)&&en>sl&&ls&&rk)o.push(row('Itne lots lo ('+inr(rk)+' risk)',Math.floor(rk/((en-sl)*ls))));
+  $('co').innerHTML=o.join('');
+}
+['cl','cls','ce','cx','cs','ct','cr'].forEach(i=>$(i).addEventListener('input',calc));
+$('cj').onclick=()=>{
+  $('q').value=(parseFloat($('cl').value)||0)*(parseFloat($('cls').value)||0)||'';
+  $('en').value=$('ce').value;$('ex').value=$('cx').value;
+  manual=false;$('pnl').value='';autoPnl();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+calc();
+resetForm();renderAll();
+(function(){
+  const show=(on,u)=>{$('lg').hidden=on;$('app').hidden=!on;if(on)$('who').textContent=(u&&u.user_metadata&&u.user_metadata.display_name)||''};
+  const enter=async ses=>{uid=ses.user.id;show(true,ses.user);resetForm();await load()};
+  if(!window.supabase){$('lmsg').textContent='Supabase load nahi hua. Internet check karo.';return}
+  sb=window.supabase.createClient(SBURL,SBKEY);
+  sb.auth.getSession().then(r=>{if(r.data&&r.data.session)enter(r.data.session)});
+  async function login(){
+    const id=$('lid').value.trim().toLowerCase().replace(/\s+/g,''),pw=$('lpw').value;
+    if(!id||!pw){$('lmsg').textContent='ID aur password dono bharo.';return}
+    $('lmsg').textContent='Ruko\u2026';
+    const r=await sb.auth.signInWithPassword({email:id+EM,password:pw});
+    if(r.error){$('lmsg').textContent='ID ya password galat hai.';return}
+    $('lpw').value='';$('lmsg').textContent='';enter(r.data.session);
+  }
+  $('lbtn').onclick=login;
+  $('lpw').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+  $('lo').onclick=async()=>{await sb.auth.signOut();uid=null;S={trades:[],fields:[]};$('pwc').hidden=true;show(false);renderAll()};
+  $('pwb').onclick=()=>{$('pwc').hidden=false;$('npw').focus()};
+  $('pwx').onclick=()=>{$('pwc').hidden=true;$('pwm').textContent=''};
+  $('pws').onclick=async()=>{
+    const p=$('npw').value;if(p.length<6){$('pwm').textContent='Kam se kam 6 akshar chahiye.';return}
+    const r=await sb.auth.updateUser({password:p});
+    if(r.error){$('pwm').textContent='Password nahi badla: '+r.error.message;return}
+    $('npw').value='';$('pwm').textContent='Password badal gaya.';
+  };
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uid)load()});
+})();
+</script>
+</body>
+</html>
